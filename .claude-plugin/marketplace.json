@@ -11,7 +11,7 @@
       "description": "Hebrew text-to-speech via edge-tts neural voices. Invoked when the user asks Claude to read a Hebrew response aloud.",
       "source": "./",
       "category": "accessibility",
-      "homepage": "https://github.com/YOUR-USERNAME/claude-hebrew-tts"
+      "homepage": "https://github.com/avivultra/claude-hebrew-tts"
     }
   ]
 }

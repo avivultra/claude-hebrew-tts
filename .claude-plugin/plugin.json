@@ -5,7 +5,7 @@
   "author": {
     "name": "Aviv"
   },
-  "homepage": "https://github.com/YOUR-USERNAME/claude-hebrew-tts",
+  "homepage": "https://github.com/avivultra/claude-hebrew-tts",
   "license": "MIT",
   "keywords": ["tts", "hebrew", "text-to-speech", "edge-tts", "accessibility", "audio"]
 }

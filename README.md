@@ -25,14 +25,14 @@ edge-tts supports 400+ other voices too — see [the full list](https://github.c
 ### Option A — Install from GitHub (recommended, once published)
 
 ```
-/plugin marketplace add https://github.com/YOUR-USERNAME/claude-hebrew-tts
+/plugin marketplace add https://github.com/avivultra/claude-hebrew-tts
 /plugin install hebrew-tts@claude-hebrew-tts
 ```
 
 ### Option B — Install from local clone
 
 ```
-git clone https://github.com/YOUR-USERNAME/claude-hebrew-tts.git
+git clone https://github.com/avivultra/claude-hebrew-tts.git
 /plugin marketplace add /path/to/claude-hebrew-tts
 /plugin install hebrew-tts@claude-hebrew-tts
 ```
