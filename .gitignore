@@ -1,0 +1,19 @@
+# Python venv created by first-run setup
+skills/hebrew-tts/venv/
+
+# Scratch file used for read-aloud text
+skills/hebrew-tts/scripts/_last.txt
+skills/hebrew-tts/scripts/*.mp3
+
+# Byte-compiled
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp

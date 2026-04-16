@@ -1,0 +1,11 @@
+{
+  "name": "claude-hebrew-tts",
+  "description": "Hebrew text-to-speech for Claude Code using Microsoft edge-tts neural voices. When the user asks Claude to read something aloud in Hebrew, the skill writes text to a temp file and plays it via the default audio handler. Zero API keys required.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Aviv"
+  },
+  "homepage": "https://github.com/YOUR-USERNAME/claude-hebrew-tts",
+  "license": "MIT",
+  "keywords": ["tts", "hebrew", "text-to-speech", "edge-tts", "accessibility", "audio"]
+}
