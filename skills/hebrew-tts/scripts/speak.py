@@ -53,9 +53,39 @@ async def synthesize(text: str, voice: str, rate: str, out_path: Path) -> None:
 
 
 def play(mp3_path: Path) -> None:
-    """Play the MP3 using the OS default handler (non-blocking on Windows)."""
+    """Play the MP3 exactly once, in an isolated detached process.
+
+    On Windows we deliberately avoid ``os.startfile`` — it delegates to
+    whatever app is registered for ``.mp3`` (Groove Music, Windows Media
+    Player, etc.), which typically maintains a playlist/queue and will
+    replay previously-opened MP3s after the new one. Using MCI via a
+    detached helper process guarantees: one file, one playback, no queue.
+    """
     if os.name == "nt":
-        os.startfile(str(mp3_path))  # noqa: S606 - intentional shell handler
+        # Spawn a detached Python that plays via MCI (mciSendStringW) and exits.
+        # This decouples playback from the main process and from any
+        # file-association handler, so the audio plays exactly once.
+        code = (
+            "import ctypes, sys\n"
+            "m = ctypes.windll.winmm.mciSendStringW\n"
+            "p = sys.argv[1]\n"
+            "m(f'open \"{p}\" type mpegvideo alias s', None, 0, None)\n"
+            "m('play s wait', None, 0, None)\n"
+            "m('close s', None, 0, None)\n"
+        )
+        flags = 0
+        if hasattr(subprocess, "CREATE_NO_WINDOW"):
+            flags |= subprocess.CREATE_NO_WINDOW
+        if hasattr(subprocess, "DETACHED_PROCESS"):
+            flags |= subprocess.DETACHED_PROCESS
+        subprocess.Popen(
+            [sys.executable, "-c", code, str(mp3_path)],
+            creationflags=flags,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+        )
     elif sys.platform == "darwin":
         subprocess.Popen(["afplay", str(mp3_path)])  # noqa: S603,S607
     else:
