@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>claude-hebrew-tts — פלאגין הקראה בעברית לקלוד קוד</title>
+<meta name="description" content="פלאגין Claude Code בקוד פתוח שמקריא עברית בקול נוירלי איכותי — בלי API keys, בלי תשלום. מבוסס edge-tts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:            #0b1020;
+    --bg-2:          #131a33;
+    --panel:         #1a2142;
+    --panel-2:       #232c5a;
+    --border:        rgba(160, 180, 255, 0.12);
+    --border-strong: rgba(160, 180, 255, 0.25);
+    --text:          #eef1ff;
+    --text-dim:      #a8b0d6;
+    --text-muted:    #7781a8;
+    --accent:        #7c9cff;
+    --accent-2:      #a78bfa;
+    --accent-3:      #22d3ee;
+    --success:       #34d399;
+    --warn:          #fbbf24;
+    --danger:        #f87171;
+    --grad:          linear-gradient(135deg, #7c9cff 0%, #a78bfa 50%, #22d3ee 100%);
+    --grad-soft:     linear-gradient(135deg, rgba(124,156,255,0.15) 0%, rgba(167,139,250,0.15) 50%, rgba(34,211,238,0.15) 100%);
+    --shadow-lg:     0 20px 50px -15px rgba(0,0,0,0.5);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Heebo', system-ui, -apple-system, sans-serif;
+    font-weight: 400;
+    line-height: 1.7;
+    color: var(--text);
+    background: var(--bg);
+    overflow-x: hidden;
+  }
+  /* Animated gradient background blobs */
+  body::before, body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::before {
+    width: 600px; height: 600px;
+    background: var(--accent);
+    top: -200px; right: -150px;
+    animation: float1 20s ease-in-out infinite;
+  }
+  body::after {
+    width: 500px; height: 500px;
+    background: var(--accent-2);
+    bottom: -150px; left: -100px;
+    animation: float2 25s ease-in-out infinite;
+  }
+  @keyframes float1 { 50% { transform: translate(-80px, 100px) scale(1.15); } }
+  @keyframes float2 { 50% { transform: translate(100px, -80px) scale(1.1); } }
+
+  .container { max-width: 1180px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+  /* ───────── HERO ───────── */
+  .hero { padding: 80px 0 70px; text-align: center; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 8px 16px;
+    background: var(--grad-soft);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    font-size: 14px; font-weight: 500; color: var(--text-dim);
+    margin-bottom: 28px;
+  }
+  .hero-badge .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 12px var(--success);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: 0.5; } }
+
+  .hero h1 {
+    font-size: clamp(40px, 7vw, 76px);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+    background: var(--grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .hero .subtitle {
+    font-size: clamp(18px, 2.2vw, 24px);
+    color: var(--text-dim);
+    max-width: 780px;
+    margin: 0 auto 20px;
+    font-weight: 400;
+  }
+  .hero .tagline {
+    font-size: 16px; color: var(--text-muted); margin-bottom: 44px;
+  }
+
+  .hero-cta { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-bottom: 32px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 26px;
+    border-radius: 12px;
+    font-weight: 600; font-size: 16px;
+    text-decoration: none;
+    transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+    border: none; cursor: pointer; font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--grad); color: #0b1020;
+    box-shadow: 0 10px 30px -10px var(--accent);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 40px -10px var(--accent); }
+  .btn-secondary {
+    background: var(--panel); color: var(--text);
+    border: 1px solid var(--border-strong);
+  }
+  .btn-secondary:hover { background: var(--panel-2); }
+  .btn svg { width: 18px; height: 18px; }
+
+  .install-cmd {
+    display: inline-block;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; color: var(--accent-3);
+    cursor: pointer;
+    transition: border-color 0.15s;
+    direction: ltr; text-align: left;
+  }
+  .install-cmd:hover { border-color: var(--accent); }
+  .install-cmd .muted { color: var(--text-muted); }
+
+  /* ───────── Section base ───────── */
+  section { padding: 70px 0; position: relative; }
+  .section-eyebrow {
+    text-align: center;
+    font-size: 14px; font-weight: 600;
+    color: var(--accent-3);
+    text-transform: uppercase; letter-spacing: 0.15em;
+    margin-bottom: 12px;
+  }
+  .section-title {
+    text-align: center;
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 18px;
+  }
+  .section-subtitle {
+    text-align: center;
+    font-size: 18px; color: var(--text-dim);
+    max-width: 680px; margin: 0 auto 48px;
+  }
+
+  /* ───────── Features grid ───────── */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 22px;
+  }
+  .feature {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 32px 26px;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .feature:hover { transform: translateY(-4px); border-color: var(--border-strong); }
+  .feature-icon {
+    width: 56px; height: 56px;
+    background: var(--grad-soft);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    margin-bottom: 20px;
+  }
+  .feature h3 { font-size: 20px; font-weight: 700; margin-bottom: 10px; }
+  .feature p { color: var(--text-dim); font-size: 15px; line-height: 1.65; }
+
+  /* ───────── Trigger phrases chips ───────── */
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 900px; margin: 0 auto; }
+  .chip {
+    padding: 10px 20px;
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    font-size: 15px; font-weight: 500;
+    color: var(--text);
+    transition: all 0.15s;
+  }
+  .chip:hover { background: var(--grad-soft); border-color: var(--accent); transform: scale(1.04); }
+  .chip-en { color: var(--text-muted); direction: ltr; }
+
+  /* ───────── Voices ───────── */
+  .voices { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; max-width: 900px; margin: 0 auto; }
+  .voice-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+  .voice-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--grad);
+  }
+  .voice-avatar {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--grad-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin-bottom: 20px;
+    border: 2px solid var(--border-strong);
+  }
+  .voice-card h3 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .voice-card .voice-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; color: var(--accent-3);
+    direction: ltr; display: inline-block;
+    margin-bottom: 14px;
+  }
+  .voice-card p { color: var(--text-dim); font-size: 14px; }
+  .voice-meta { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .tag {
+    padding: 4px 10px; border-radius: 6px;
+    font-size: 12px; font-weight: 600;
+    background: var(--bg-2); color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .tag.default { background: rgba(52,211,153,0.15); color: var(--success); border-color: rgba(52,211,153,0.3); }
+
+  /* ───────── Install steps ───────── */
+  .steps { display: flex; flex-direction: column; gap: 20px; max-width: 780px; margin: 0 auto; }
+  .step {
+    display: flex; gap: 20px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--grad);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 20px; color: #0b1020;
+  }
+  .step-body h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .step-body p { color: var(--text-dim); font-size: 15px; margin-bottom: 12px; }
+  .code {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+    color: var(--accent-3);
+    overflow-x: auto;
+    direction: ltr; text-align: left;
+    white-space: pre;
+  }
+  .code .cmt { color: var(--text-muted); }
+
+  /* ───────── Flow diagram ───────── */
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    max-width: 1000px; margin: 0 auto;
+    position: relative;
+  }
+  .flow-node {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 18px;
+    text-align: center;
+    position: relative;
+  }
+  .flow-node .num {
+    position: absolute; top: -12px; right: 12px;
+    width: 26px; height: 26px;
+    background: var(--accent);
+    color: #0b1020;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px;
+  }
+  .flow-node .icon { font-size: 32px; margin-bottom: 10px; }
+  .flow-node h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .flow-node p { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+  /* ───────── Tech stack ───────── */
+  .stack {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    max-width: 900px; margin: 0 auto;
+  }
+  .stack-item {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+  }
+  .stack-logo {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--grad-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .stack-item h4 { font-size: 15px; font-weight: 700; }
+  .stack-item p { font-size: 13px; color: var(--text-muted); }
+
+  /* ───────── Stats ───────── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    max-width: 900px; margin: 0 auto;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+  }
+  .stat-val {
+    font-size: 44px; font-weight: 900;
+    background: var(--grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .stat-label { color: var(--text-dim); font-size: 14px; font-weight: 500; }
+
+  /* ───────── CTA footer ───────── */
+  .cta-final {
+    text-align: center;
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    border-radius: 24px;
+    padding: 60px 32px;
+    max-width: 900px;
+    margin: 0 auto;
+    position: relative; overflow: hidden;
+  }
+  .cta-final::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--grad-soft);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .cta-final > * { position: relative; }
+  .cta-final h2 { font-size: clamp(26px, 3.5vw, 36px); font-weight: 800; margin-bottom: 14px; }
+  .cta-final p { font-size: 17px; color: var(--text-dim); margin-bottom: 28px; max-width: 600px; margin-right: auto; margin-left: auto; }
+
+  footer {
+    padding: 40px 24px 60px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* Copy-to-clipboard toast */
+  .toast {
+    position: fixed;
+    bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--panel);
+    border: 1px solid var(--success);
+    border-radius: 12px;
+    padding: 12px 22px;
+    color: var(--success);
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+    z-index: 100;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  @media (max-width: 700px) {
+    .hero { padding: 50px 0 40px; }
+    section { padding: 50px 0; }
+    .feature, .voice-card, .step { padding: 22px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═════════ HERO ═════════ -->
+<header class="hero container">
+  <div class="hero-badge">
+    <span class="dot"></span>
+    גרסה 0.1.0 · MIT · פעיל ב־GitHub
+  </div>
+  <h1>claude-hebrew-tts</h1>
+  <p class="subtitle">פלאגין <strong>Claude Code</strong> שמקריא עברית באיכות נוירלית — בלי API keys, בלי חשבונות, בלי תשלום.</p>
+  <p class="tagline">תגיד לקלוד <em>"תקריא"</em>. הוא יקריא.</p>
+
+  <div class="hero-cta">
+    <a class="btn btn-primary" href="https://github.com/avivultra/claude-hebrew-tts" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.4 3-.405 1.02.005 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+      צפה ב־GitHub
+    </a>
+    <button class="btn btn-secondary" onclick="copyToClipboard('/plugin marketplace add https://github.com/avivultra/claude-hebrew-tts\n/plugin install hebrew-tts@claude-hebrew-tts', this)">
+      📋 העתק פקודת התקנה
+    </button>
+  </div>
+
+  <div class="install-cmd" onclick="copyToClipboard(this.innerText, this)">
+    <div><span class="muted">$</span> /plugin marketplace add https://github.com/avivultra/claude-hebrew-tts</div>
+    <div><span class="muted">$</span> /plugin install hebrew-tts@claude-hebrew-tts</div>
+  </div>
+</header>
+
+<!-- ═════════ FEATURES ═════════ -->
+<section>
+  <div class="container">
+    <div class="section-eyebrow">למה זה מגניב</div>
+    <h2 class="section-title">שלושה דברים ששווים את זה</h2>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon">🎙️</div>
+        <h3>קול נוירלי אמיתי</h3>
+        <p>לא קול רובוטי מהשנות ה-90. Avri (גברי) ו-Hila (נשי) — אותם קולות של Microsoft Azure Neural, כמו ב-Edge Reader. שומעים הגייה טבעית, אינטונציה, שמות בעברית שנאמרים נכון.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔓</div>
+        <h3>חינם לחלוטין</h3>
+        <p>אין מפתח API, אין הרשמה, אין מכסה חודשית. edge-tts משתמש ב־endpoint הציבורי של Microsoft — אותו אחד שהדפדפן Edge משתמש בו בתוכנה <em>Read Aloud</em>. pip install אחד ונגמר.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <h3>Skill = אוטומטי</h3>
+        <p>לא פקודה שצריך לזכור. זה <strong>Skill של Claude Code</strong> — קלוד מזהה לבד ביטויים כמו <em>"תקריא"</em>, <em>"בקול"</em>, <em>"הקרא לי"</em> ומפעיל את הכלי. אפס תחזוקה.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ TRIGGER PHRASES ═════════ -->
+<section style="background: var(--bg-2);">
+  <div class="container">
+    <div class="section-eyebrow">איך מבקשים</div>
+    <h2 class="section-title">תגיד משהו מהאלה וזה יעבוד</h2>
+    <p class="section-subtitle">הסקיל מזהה כמה עשרות ניסוחים בעברית ובאנגלית. לא צריך פורמט קבוע — רק להגיד.</p>
+
+    <div class="chips">
+      <span class="chip">תקריא</span>
+      <span class="chip">תקריא לי</span>
+      <span class="chip">תקריא את זה</span>
+      <span class="chip">תקריא את התשובה שלך</span>
+      <span class="chip">תגיד את זה בקול</span>
+      <span class="chip">הקרא לי</span>
+      <span class="chip">הקרא בקול</span>
+      <span class="chip">בקול</span>
+      <span class="chip">תקריא עם הילה</span>
+      <span class="chip">תקריא יותר מהר</span>
+      <span class="chip">תשמור כ-MP3</span>
+      <span class="chip chip-en">read this aloud</span>
+      <span class="chip chip-en">speak this in Hebrew</span>
+      <span class="chip chip-en">say this out loud</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ VOICES ═════════ -->
+<section>
+  <div class="container">
+    <div class="section-eyebrow">הקולות</div>
+    <h2 class="section-title">שני קולות עבריים בוגרים</h2>
+    <p class="section-subtitle">Microsoft Azure Neural TTS. אפשר להחליף ביניהם בכל בקשה, ואפשר להוסיף קולות נוספים מעל 400 הקולות הנתמכים.</p>
+
+    <div class="voices">
+      <div class="voice-card">
+        <div class="voice-avatar">👨</div>
+        <h3>אברי</h3>
+        <div class="voice-id">he-IL-AvriNeural</div>
+        <p>קול גברי בוגר, נינוח, מתאים לסיכומים ארוכים והסברים טכניים.</p>
+        <div class="voice-meta">
+          <span class="tag default">ברירת מחדל</span>
+          <span class="tag">--voice avri</span>
+        </div>
+      </div>
+      <div class="voice-card">
+        <div class="voice-avatar">👩</div>
+        <h3>הילה</h3>
+        <div class="voice-id">he-IL-HilaNeural</div>
+        <p>קול נשי בהיר וחברותי, מתאים להודעות קצרות, הנחיות, אישורים.</p>
+        <div class="voice-meta">
+          <span class="tag">--voice hila</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ HOW IT WORKS ═════════ -->
+<section style="background: var(--bg-2);">
+  <div class="container">
+    <div class="section-eyebrow">מתחת למכסה המנוע</div>
+    <h2 class="section-title">איך זה עובד בפועל</h2>
+    <p class="section-subtitle">זרימה פשוטה, כל שלב לוקח פחות משנייה (חוץ מיצירת ה־MP3 שתלויה באורך הטקסט).</p>
+
+    <div class="flow">
+      <div class="flow-node">
+        <div class="num">1</div>
+        <div class="icon">💬</div>
+        <h4>אתה מבקש</h4>
+        <p>"תקריא לי את התשובה האחרונה"</p>
+      </div>
+      <div class="flow-node">
+        <div class="num">2</div>
+        <div class="icon">🧠</div>
+        <h4>קלוד מזהה טריגר</h4>
+        <p>ה-Skill נטען לפי ה-description ב-SKILL.md</p>
+      </div>
+      <div class="flow-node">
+        <div class="num">3</div>
+        <div class="icon">📝</div>
+        <h4>טקסט לקובץ UTF-8</h4>
+        <p>Claude כותב את הטקסט ל־_last.txt</p>
+      </div>
+      <div class="flow-node">
+        <div class="num">4</div>
+        <div class="icon">🎧</div>
+        <h4>edge-tts יוצר MP3</h4>
+        <p>קריאה ל־Azure Neural דרך Python</p>
+      </div>
+      <div class="flow-node">
+        <div class="num">5</div>
+        <div class="icon">🔊</div>
+        <h4>MCI מנגן פעם אחת</h4>
+        <p>API מובנה של Windows, בלי Groove ובלי תור</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ INSTALL ═════════ -->
+<section>
+  <div class="container">
+    <div class="section-eyebrow">התקנה</div>
+    <h2 class="section-title">שלושה שלבים, פחות מדקה</h2>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h3>מוסיפים את ה־marketplace</h3>
+          <p>בתוך Claude Code (בכל פרויקט), מריצים:</p>
+          <div class="code">/plugin marketplace add https://github.com/avivultra/claude-hebrew-tts</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h3>מתקינים את הפלאגין</h3>
+          <p>אותה שיחה, פקודה אחת נוספת:</p>
+          <div class="code">/plugin install hebrew-tts@claude-hebrew-tts</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h3>setup חד־פעמי (venv + edge-tts)</h3>
+          <p>בפעם הראשונה שמשתמשים — קלוד ירוץ את זה אוטומטית, או שאפשר להריץ ידנית:</p>
+          <div class="code"><span class="cmt"># Windows</span>
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
+
+<span class="cmt"># macOS / Linux</span>
+bash scripts/setup.sh</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ TECH STACK ═════════ -->
+<section style="background: var(--bg-2);">
+  <div class="container">
+    <div class="section-eyebrow">הרכיבים</div>
+    <h2 class="section-title">מה מפעיל את כל זה</h2>
+    <p class="section-subtitle">כל הרכיבים חינמיים, בקוד פתוח, ובלי תלויות מחייבות ענן.</p>
+
+    <div class="stack">
+      <div class="stack-item"><div class="stack-logo">🐍</div><div><h4>Python 3.10+</h4><p>סביבה עצמאית (venv)</p></div></div>
+      <div class="stack-item"><div class="stack-logo">🎤</div><div><h4>edge-tts</h4><p>רשת הקולות של Azure</p></div></div>
+      <div class="stack-item"><div class="stack-logo">🎵</div><div><h4>Windows MCI</h4><p>API הקלטה/השמעה מובנה</p></div></div>
+      <div class="stack-item"><div class="stack-logo">📄</div><div><h4>SKILL.md</h4><p>קלוד קוד מזהה אוטומטית</p></div></div>
+      <div class="stack-item"><div class="stack-logo">📦</div><div><h4>plugin.json</h4><p>metadata ופרטי רישום</p></div></div>
+      <div class="stack-item"><div class="stack-logo">🏛️</div><div><h4>marketplace.json</h4><p>single-plugin marketplace</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ STATS ═════════ -->
+<section>
+  <div class="container">
+    <div class="section-eyebrow">במספרים</div>
+    <h2 class="section-title">מה בנינו היום</h2>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-val">0</div><div class="stat-label">API Keys נדרשים</div></div>
+      <div class="stat"><div class="stat-val">3</div><div class="stat-label">קומיטים נקיים</div></div>
+      <div class="stat"><div class="stat-val">400+</div><div class="stat-label">קולות זמינים</div></div>
+      <div class="stat"><div class="stat-val">~30s</div><div class="stat-label">זמן התקנה ראשונית</div></div>
+      <div class="stat"><div class="stat-val">~80</div><div class="stat-label">טוקנים להקראה</div></div>
+      <div class="stat"><div class="stat-val">1</div><div class="stat-label">הקראה לבקשה (אחרי התיקון)</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════════ CTA FOOTER ═════════ -->
+<section>
+  <div class="container">
+    <div class="cta-final">
+      <h2>רוצה להתחיל?</h2>
+      <p>זה פרויקט קוד פתוח תחת רישיון MIT. קלון, fork, issue, PR — הכל פתוח.<br>אם זה עוזר לך, תן ⭐ על הריפו — זה מה שעוזר לפרויקט להגיע לאחרים.</p>
+      <div class="hero-cta" style="margin-bottom: 0;">
+        <a class="btn btn-primary" href="https://github.com/avivultra/claude-hebrew-tts" target="_blank" rel="noopener">
+          ⭐ תן כוכב ב־GitHub
+        </a>
+        <a class="btn btn-secondary" href="https://github.com/avivultra/claude-hebrew-tts/issues/new" target="_blank" rel="noopener">
+          💡 שלח רעיון
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>
+    נבנה עם ❤️ על ידי
+    <a href="https://github.com/avivultra" target="_blank" rel="noopener">@avivultra</a>
+    · מבוסס <a href="https://github.com/rany2/edge-tts" target="_blank" rel="noopener">edge-tts</a>
+    · רישיון <a href="https://github.com/avivultra/claude-hebrew-tts/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a>
+  </p>
+  <p style="margin-top: 10px; opacity: 0.6;">
+    Claude Code · 2026
+  </p>
+</footer>
+
+<div class="toast" id="toast">הועתק ללוח!</div>
+
+<script>
+  function copyToClipboard(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 1800);
+    });
+  }
+</script>
+
+</body>
+</html>
