@@ -69,7 +69,7 @@ Tell the user: *"הכלי צריך התקנה חד-פעמית (יוצר venv ו�
 ## Optional flags
 
 - `--voice hila` — female voice (he-IL-HilaNeural). Default is `avri` (male, he-IL-AvriNeural).
-- `--rate "+75%"` (faster) / `--rate "+25%"` (slower than default) / `--rate "+0%"` (the raw neural-voice pace — feels slow) — speech rate override. Default is `+50%` (1.5×), a brisk natural pace. Only override when the user explicitly asks ("יותר מהר" / "יותר לאט").
+- `--rate "+60%"` (faster) / `--rate "+15%"` (slower than default) / `--rate "+0%"` (the raw neural-voice pace — feels slow) — speech rate override. Default is `+35%` (~1.35×), a comfortable conversational pace. Only override when the user explicitly asks ("יותר מהר" / "יותר לאט").
 - `--save PATH.mp3` — save to file instead of playing.
 
 ## Style when confirming

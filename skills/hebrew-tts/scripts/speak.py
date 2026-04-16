@@ -121,7 +121,7 @@ def main() -> None:
     p.add_argument("text", nargs="?", help="Text to speak (use '-' for stdin)")
     p.add_argument("--voice", choices=VOICES.keys(), default="avri",
                    help="Voice name (default: avri / male)")
-    p.add_argument("--rate", default="+50%", help="Speech rate, e.g. '+10%%', '-5%%'. Default: +50%% (1.5x, brisk pace — neural voices at +0%% feel unnaturally slow)")
+    p.add_argument("--rate", default="+35%", help="Speech rate, e.g. '+10%%', '-5%%'. Default: +35%% (~1.35x, comfortable conversational pace — neural voices at +0%% feel unnaturally slow)")
     p.add_argument("--save", type=Path, default=None,
                    help="Save MP3 to this path instead of playing")
     p.add_argument("--file", type=Path, default=None,
